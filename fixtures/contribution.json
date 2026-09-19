@@ -1,0 +1,7 @@
+{
+  "participant_alias": "child-017",
+  "device_sequence": 31,
+  "canvas_region": {"x": 120, "y": 80, "width": 45, "height": 60},
+  "recorded_at": "2026-09-19T09:20:00+08:00",
+  "consent_scopes": ["on-site-display"]
+}
