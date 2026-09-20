@@ -1,22 +1,38 @@
-"""提供基础运行状态接口。"""
+"""启动授权服务。
 
-import json
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+用法::
 
+    python3 -m youth_art_rights [--host 0.0.0.0] [--port 8080] [--store data/store.json]
 
-class Handler(BaseHTTPRequestHandler):
-    """返回授权服务的运行状态。"""
+``--store`` 指定后，设备登记与方案以 JSON 原子落盘，重启不丢失；
+不指定则仅使用内存台账，适合演示与测试。
+"""
 
-    def do_GET(self) -> None:
-        if self.path != "/health":
-            self.send_error(404)
-            return
-        body = json.dumps({"状态": "服务已启动"}, ensure_ascii=False).encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+from __future__ import annotations
+
+import argparse
+
+from . import SERVICE_NAME
+from .api import make_server
+from .store import Store
 
 
-ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+def main() -> None:
+    parser = argparse.ArgumentParser(description=SERVICE_NAME)
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--store", default=None, help="JSON 台账文件路径")
+    args = parser.parse_args()
+
+    store = Store(args.store)
+    server = make_server(args.host, args.port, store)
+    print(f"{SERVICE_NAME} 已启动：http://{args.host}:{args.port}")
+    print("公众目录: GET /v1/public/catalog    设备合并: POST /v1/sync")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        server.shutdown()
+
+
+if __name__ == "__main__":
+    main()
